@@ -46,10 +46,11 @@ This function should only modify configuration layer settings."
      ;;python
      helm
      ;; markdown
-
+     lsp
      multiple-cursors
      (haskell :variables
-              haskell-completion-backend 'dante)
+              haskell-completion-backend 'ghci
+              haskell-process-type 'stack-ghci)
      org
      ;; (shell :variables
      ;;        shell-default-height 30
@@ -68,8 +69,8 @@ This function should only modify configuration layer settings."
    ;; '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
    dotspacemacs-additional-packages '(
-                                      ;;(lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
-                                      (dante :location (recipe :fetcher github :repo "jyp/dante"))
+                                      (lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
+                                      ;;(dante :location (recipe :fetcher github :repo "jyp/dante"))
    )
 
    ;; A list of packages that cannot be updated.
@@ -476,11 +477,11 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
-  ;;(setq lsp-haskell-prcess-path-hie "hie-wrapper")
-  ;;(require 'lsp-haskell)
-  ;;(add-hook 'haskell-mode-hook #'lsp)
-  (add-hook 'dante-mode-hook 'flycheck-mode)
-  (global-company-mode)
+  (setq lsp-haskell-prcess-path-hie "hie-wrapper")
+  (require 'lsp-haskell)
+  (add-hook 'haskell-mode-hook #'lsp)
+  ;;(add-hook 'dante-mode-hook 'flycheck-mode)
+  ;;(global-company-mode)
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
