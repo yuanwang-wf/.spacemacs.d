@@ -45,14 +45,28 @@ This function should only modify configuration layer settings."
      ;; better-defaults
      emacs-lisp
      git
+     (lsp :variables
+          default-nix-wrapper (lambda (args)
+                                (append
+                                 (append (list "nix-shell" "-I" "." "--command")
+                                         (list (mapconcat 'identity args " "))
+                                         )
+                                 (list (nix-current-sandbox))
+                                 )
+                                )
+          lsp-haskell-process-wrapper-function default-nix-wrapper
+          )
+     (haskell :variables
+              haskell-enable-hindent t
+              haskell-completion-backend 'lsp
+              haskell-process-type 'cabal-new-repl)
      ;;python
      helm
      ;; markdown
 
      multiple-cursors
-     (haskell :variables
-              haskell-completion-backend 'dante)
      org
+     purescript
      ;; (shell :variables
      ;;        shell-default-height 30
      ;;        shell-default-position 'bottom)
@@ -71,7 +85,9 @@ This function should only modify configuration layer settings."
    ;; Also include the dependencies as they will not be resolved automatically.
    dotspacemacs-additional-packages '(
                                       ;;(lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
-                                      (dante :location (recipe :fetcher github :repo "jyp/dante"))
+                                      ;;(dante :location (recipe :fetcher github :repo "jyp/dante"))
+                                      direnv
+                                      nix-sandbox
    )
 
    ;; A list of packages that cannot be updated.
@@ -481,8 +497,8 @@ before packages are loaded."
   ;;(setq lsp-haskell-prcess-path-hie "hie-wrapper")
   ;;(require 'lsp-haskell)
   ;;(add-hook 'haskell-mode-hook #'lsp)
-  (add-hook 'dante-mode-hook 'flycheck-mode)
-  (global-company-mode)
+  ;;(add-hook 'dante-mode-hook 'flycheck-mode)
+  ;;(global-company-mode)
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
