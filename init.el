@@ -45,17 +45,7 @@ This function should only modify configuration layer settings."
      ;; better-defaults
      emacs-lisp
      git
-     (lsp :variables
-          default-nix-wrapper (lambda (args)
-                                (append
-                                 (append (list "nix-shell" "-I" "." "--command")
-                                         (list (mapconcat 'identity args " "))
-                                         )
-                                 (list (nix-current-sandbox))
-                                 )
-                                )
-          lsp-haskell-process-wrapper-function default-nix-wrapper
-          )
+     lsp
      (haskell :variables
               haskell-enable-hindent t
               haskell-completion-backend 'lsp
@@ -499,6 +489,12 @@ before packages are loaded."
   ;;(add-hook 'haskell-mode-hook #'lsp)
   ;;(add-hook 'dante-mode-hook 'flycheck-mode)
   ;;(global-company-mode)
+   (setq lsp-haskell-process-args-hie '("--lsp")
+        lsp-haskell-process-path-hie "ghcide"
+        lsp-haskell-process-wrapper-function (lambda (argv) (cons (car argv) (cddr argv)))
+        )
+  (add-hook 'haskell-mode-hook
+            #'lsp)
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
