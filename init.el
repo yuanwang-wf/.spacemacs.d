@@ -33,7 +33,7 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(
+   '(html
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
@@ -43,22 +43,32 @@ This function should only modify configuration layer settings."
      ;; better-defaults
      emacs-lisp
      git
-     ;;python
+     (python :variables
+             python-backend 'lsp
+             python-lsp-server 'mspyls)
+     yaml
      helm
      ;; markdown
+     confluence
      lsp
      multiple-cursors
      (haskell :variables
-              haskell-completion-backend 'ghci
-              haskell-process-type 'stack-ghci)
-     org
+              haskell-completion-backend 'lsp)
+     (org :variables
+          org-enable-github-support t)
+     (latex :variables
+            latex-build-command "LaTeX")
      ;; (shell :variables
      ;;        shell-default-height 30
      ;;        shell-default-position 'bottom)
      ;; spell-checking
-     ;; syntax-checking
+     syntax-checking
      treemacs
-     ;; version-control
+     version-control
+     purescript
+     (dart :variables
+           dart-format-on-save t
+           dart-enable-analysis-server t)
      )
 
    ;; List of additional packages that will be installed without being
@@ -69,8 +79,14 @@ This function should only modify configuration layer settings."
    ;; '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
    dotspacemacs-additional-packages '(
-                                      (lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
-                                      ;;(dante :location (recipe :fetcher github :repo "jyp/dante"))
+      nix-mode
+      dracula-theme
+      actionscript-mode
+      direnv
+      dhall-mode
+      org-plus-contrib
+      lsp-python-ms
+      (lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
    )
 
    ;; A list of packages that cannot be updated.
@@ -216,8 +232,8 @@ It should only modify the values of Spacemacs settings."
    dotspacemacs-colorize-cursor-according-to-state t
 
    ;; Default font or prioritized list of fonts.
-   dotspacemacs-default-font '("Source Code Pro"
-                               :size 22
+   dotspacemacs-default-font '("MesloLGS NF"
+                               :size 21
                                :weight normal
                                :width normal)
 
@@ -249,7 +265,7 @@ It should only modify the values of Spacemacs settings."
    ;; and TAB or `C-m' and `RET'.
    ;; In the terminal, these pairs are generally indistinguishable, so this only
    ;; works in the GUI. (default nil)
-   dotspacemacs-distinguish-gui-tab nil
+   dotspacemacs-distinguish-gui-tab t
 
    ;; Name of the default layout (default "Default")
    dotspacemacs-default-layout-name "Default"
@@ -369,7 +385,7 @@ It should only modify the values of Spacemacs settings."
    ;;   :size-limit-kb 1000)
    ;; When used in a plist, `visual' takes precedence over `relative'.
    ;; (default nil)
-   dotspacemacs-line-numbers nil
+   dotspacemacs-line-numbers t
 
    ;; Code folding method. Possible values are `evil' and `origami'.
    ;; (default 'evil)
@@ -462,6 +478,10 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
+  (when (version<= "26.0.50" emacs-version )
+    (global-display-line-numbers-mode))
+  (when (string= system-type "darwin")
+    (setq dired-use-ls-dired nil))
   )
 
 (defun dotspacemacs/user-load ()
@@ -477,11 +497,77 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
-  (setq lsp-haskell-prcess-path-hie "hie-wrapper")
+  (setq lsp-haskell-process-path-hie "hie-wrapper")
+  (add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode))
   (require 'lsp-haskell)
+  (require 'lsp-python-ms)
   (add-hook 'haskell-mode-hook #'lsp)
-  ;;(add-hook 'dante-mode-hook 'flycheck-mode)
-  ;;(global-company-mode)
+  (custom-set-variables
+   '(haskell-stylish-on-save t))
+  (add-hook 'python-mode #'lsp)
+  (add-hook 'python-mode-hook (lambda ()
+                                (flycheck-mode 1)
+                                (semantic-mode 1)
+                                (setq flycheck-checker 'flake8)))
+  (add-hook 'doc-view-mode-hook 'auto-revert-mode)
+  (setq TeX-engine 'xetex)
+  (setq org-directory "/Users/yuanwang/.notable/org-notes")
+  (setq org-default-notes-file (concat org-directory "/notes.org"))
+  (setq org-agenda-files (quote ("/Users/yuanwang/daily_logs"
+                                 "/Users/yuanwang/.notable/org-notes")))
+  (with-eval-after-load 'treemacs
+    (defun treemacs-ignore-gitignore (file _)
+      (string= file ".gitignore"))
+    (push #'treemacs-ignore-gitignore treemacs-ignored-file-predicates))
+
+  (defun get-point (symbol &optional arg)
+    "get the point"
+    (funcall symbol arg)
+    (point))
+
+  (defun copy-thing (begin-of-thing end-of-thing &optional arg)
+    "Copy thing between beg & end into kill ring."
+    (save-excursion
+      (let ((beg (get-point begin-of-thing 1))
+            (end (get-point end-of-thing arg)))
+        (copy-region-as-kill beg end))))
+
+  (defun paste-to-mark (&optional arg)
+    "Paste things to mark, or to the prompt in shell-mode."
+    (unless (eq arg 1)
+      (if (string= "shell-mode" major-mode)
+          (comint-next-prompt 25535)
+        (goto-char (mark)))
+      (yank)))
+
+  (defun copy-word (&optional arg)
+    "Copy words at point into kill-ring"
+    (interactive "P")
+    (copy-thing 'backward-word 'forward-word arg)
+    ;;(paste-to-mark arg)
+    )
+  (global-set-key (kbd "C-c w")         (quote copy-word))
+
+  (defun beginning-of-string (&optional arg)
+    (when (re-search-backward "[ \t]" (line-beginning-position) :noerror 1)
+      (forward-char 1)))
+
+  (defun end-of-string (&optional arg)
+    (when (re-search-forward "[ \t]" (line-end-position) :noerror arg)
+      (backward-char 1)))
+  
+  (defun thing-copy-string-to-mark(&optional arg)
+    " Try to copy a string and paste it to the mark
+     When used in shell-mode, it will paste string on shell prompt by default "
+    (interactive "P")
+    (copy-thing 'beginning-of-string 'end-of-string arg)
+    ;;(paste-to-mark arg)
+    )
+
+  (global-set-key (kbd "C-c s")         (quote thing-copy-string-to-mark))
+  (autoload 'actionscript-mode "actionscript-mode" "Major mode for actionscript." t)
+  (add-to-list 'auto-mode-alist '("\\.as\\'" . actionscript-mode))
+
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
@@ -496,14 +582,19 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(blink-cursor-mode nil)
+ '(global-display-line-numbers-mode t)
+ '(haskell-stylish-on-save t)
+ '(line-number-mode nil)
  '(package-selected-packages
    (quote
-    (yapfify smeargle pytest pyenv-mode py-isort pippel pipenv pyvenv pip-requirements magit-svn magit-popup python live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gitignore helm-git-grep gitignore-templates gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link evil-magit magit transient git-commit with-editor cython-mode company-anaconda blacken anaconda-mode pythonic yasnippet-snippets intero helm-company helm-c-yasnippet fuzzy dante lcr company-statistics company-lsp company-ghci company-ghc company-cabal company auto-yasnippet ac-ispell auto-complete lsp-ui lsp-treemacs lsp-haskell hlint-refactor hindent helm-lsp lsp-mode markdown-mode dash-functional helm-hoogle haskell-snippets yasnippet ghc haskell-mode cmm-mode ws-butler writeroom-mode winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package treemacs-projectile toc-org symon symbol-overlay string-inflection spaceline-all-the-icons restart-emacs request rainbow-delimiters popwin persp-mode pcre2el password-generator paradox overseer org-plus-contrib org-bullets open-junk-file nameless move-text macrostep lorem-ipsum link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flx-ido fill-column-indicator fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu elisp-slime-nav editorconfig dumb-jump dotenv-mode doom-modeline diminish devdocs define-word counsel-projectile column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line))))
+    (actionscript-mode flutter dart-server dart-mode confluence xml-rpc ox-jira jira-markup-mode dhall-mode reformatter ox-gfm web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css counsel swiper ivy company-web web-completion-data add-node-modules-path yaml-mode nix-mode git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter dracula-theme diff-hl browse-at-remote yapfify smeargle pytest pyenv-mode py-isort pippel pipenv pyvenv pip-requirements magit-svn magit-popup python live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gitignore helm-git-grep gitignore-templates gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link evil-magit magit transient git-commit with-editor cython-mode company-anaconda blacken anaconda-mode pythonic yasnippet-snippets intero helm-company helm-c-yasnippet fuzzy dante lcr company-statistics company-lsp company-ghci company-ghc company-cabal company auto-yasnippet ac-ispell auto-complete lsp-ui lsp-treemacs lsp-haskell hlint-refactor hindent helm-lsp lsp-mode markdown-mode dash-functional helm-hoogle haskell-snippets yasnippet ghc haskell-mode cmm-mode ws-butler writeroom-mode winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package treemacs-projectile toc-org symon symbol-overlay string-inflection spaceline-all-the-icons restart-emacs request rainbow-delimiters popwin persp-mode pcre2el password-generator paradox overseer org-plus-contrib org-bullets open-junk-file nameless move-text macrostep lorem-ipsum link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flx-ido fill-column-indicator fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu elisp-slime-nav editorconfig dumb-jump dotenv-mode doom-modeline diminish devdocs define-word counsel-projectile column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
+ '(tool-bar-mode nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
 )
+ '(default ((t (:family "MesloLGS NF" :foundry "nil" :slant normal :weight normal :height 210 :width normal)))))
 
