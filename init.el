@@ -33,19 +33,23 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(html
+   '(javascript
+     go
+     html
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
      ;; `M-m f e R' (Emacs style) to install them.
      ;; ----------------------------------------------------------------
      auto-completion
-     ;; better-defaults
+     better-defaults
      emacs-lisp
      git
      (python :variables
              python-backend 'lsp
-             python-lsp-server 'mspyls)
+             python-lsp-server 'mspyls
+             python-pipenv-activate t
+             )
      yaml
      helm
      ;; markdown
@@ -58,17 +62,20 @@ This function should only modify configuration layer settings."
           org-enable-github-support t)
      (latex :variables
             latex-build-command "LaTeX")
-     ;; (shell :variables
-     ;;        shell-default-height 30
-     ;;        shell-default-position 'bottom)
+     (shell :variables
+             shell-default-height 30
+             shell-default-position 'bottom)
      ;; spell-checking
      syntax-checking
-     treemacs
+     (treemacs
+      :variables treemacs-use-filewatch-mode t
+      :variables treemacs-use-git-mode 'deferred)
      version-control
-     purescript
+     (java :variables java-backend 'lsp)
      (dart :variables
            dart-format-on-save t
-           dart-enable-analysis-server t)
+           dart-backend 'lsp
+           dart-server-sdk-path "/usr/local/bin/")
      )
 
    ;; List of additional packages that will be installed without being
@@ -79,21 +86,29 @@ This function should only modify configuration layer settings."
    ;; '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
    dotspacemacs-additional-packages '(
-      nix-mode
-      dracula-theme
-      actionscript-mode
-      direnv
-      dhall-mode
-      org-plus-contrib
-      lsp-python-ms
-      (lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
+                                      nix-mode
+                                      doom-themes
+                                      actionscript-mode
+                                      direnv
+                                      dhall-mode
+                                      org-plus-contrib
+                                      lsp-python-ms
+                                      ivy-posframe
+                                      (lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
    )
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
 
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '()
+   dotspacemacs-excluded-packages '(
+                                    doom-molokai-theme
+                                    doom-one-theme
+                                    doom-city-lights-theme
+                                    doom-dracula-theme
+                                    doom-nord-light-theme
+                                    doom-peacock-theme
+                                    )
 
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
@@ -215,8 +230,13 @@ It should only modify the values of Spacemacs settings."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press `SPC T n' to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(spacemacs-dark
-                         spacemacs-light)
+   dotspacemacs-themes '(doom-molokai
+                         doom-peacock
+                         doom-one
+                         doom-city-lights
+                         doom-dracula
+                         doom-nord-light
+                         spacemacs-dark)
 
    ;; Set the theme for the Spaceline. Supported themes are `spacemacs',
    ;; `all-the-icons', `custom', `doom', `vim-powerline' and `vanilla'. The
@@ -482,6 +502,7 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
     (global-display-line-numbers-mode))
   (when (string= system-type "darwin")
     (setq dired-use-ls-dired nil))
+  "(setq mac-option-modifier 'super) ; make opt key do Super"
   )
 
 (defun dotspacemacs/user-load ()
@@ -502,6 +523,7 @@ before packages are loaded."
   (require 'lsp-haskell)
   (require 'lsp-python-ms)
   (add-hook 'haskell-mode-hook #'lsp)
+  (add-hook 'dart-mode-hook #'lsp)
   (custom-set-variables
    '(haskell-stylish-on-save t))
   (add-hook 'python-mode #'lsp)
@@ -516,12 +538,11 @@ before packages are loaded."
   (setq org-agenda-files (quote ("/Users/yuanwang/daily_logs"
                                  "/Users/yuanwang/.notable/org-notes")))
   (with-eval-after-load 'treemacs
-    (defun treemacs-ignore-gitignore (file _)
-      (string= file ".gitignore"))
-    (push #'treemacs-ignore-gitignore treemacs-ignored-file-predicates))
+    (add-to-list 'treemacs-pre-file-insert-predicates
+                 #'treemacs-is-file-git-ignored?))
 
   (defun get-point (symbol &optional arg)
-    "get the point"
+    "get the point"x
     (funcall symbol arg)
     (point))
 
@@ -546,8 +567,7 @@ before packages are loaded."
     (copy-thing 'backward-word 'forward-word arg)
     ;;(paste-to-mark arg)
     )
-  (global-set-key (kbd "C-c w")         (quote copy-word))
-
+ 
   (defun beginning-of-string (&optional arg)
     (when (re-search-backward "[ \t]" (line-beginning-position) :noerror 1)
       (forward-char 1)))
@@ -555,7 +575,7 @@ before packages are loaded."
   (defun end-of-string (&optional arg)
     (when (re-search-forward "[ \t]" (line-end-position) :noerror arg)
       (backward-char 1)))
-  
+
   (defun thing-copy-string-to-mark(&optional arg)
     " Try to copy a string and paste it to the mark
      When used in shell-mode, it will paste string on shell prompt by default "
@@ -564,11 +584,51 @@ before packages are loaded."
     ;;(paste-to-mark arg)
     )
 
-  (global-set-key (kbd "C-c s")         (quote thing-copy-string-to-mark))
   (autoload 'actionscript-mode "actionscript-mode" "Major mode for actionscript." t)
   (add-to-list 'auto-mode-alist '("\\.as\\'" . actionscript-mode))
 
-  )
+  (defun move-line-up ()
+    "Move up the current line."
+    (interactive)
+    (transpose-lines 1)
+    (forward-line -2)
+    (indent-according-to-mode))
+
+  (defun move-line-down ()
+    "Move down the current line."
+    (interactive)
+    (forward-line 1)
+    (transpose-lines 1)
+    (forward-line -1)
+    (indent-according-to-mode))
+
+  (with-eval-after-load 'ivy-posframe
+    (setq ivy-posframe-display-functions-alist
+          '((swiper          . nil)
+            (complete-symbol . ivy-posframe-display-at-point)
+            (t               . ivy-posframe-display-at-frame-center)))
+
+    ;; TODO: not working
+    ;; (with-eval-after-load 'spacemacs-light
+    ;;   (custom-theme-set-faces
+    ;;    'spacemacs-light
+    ;;    '(ivy-posframe-border ((t (:inherit default))))))
+    )
+
+  (ivy-posframe-mode 1)
+
+  (global-set-key (kbd "C-c s")         (quote thing-copy-string-to-mark))
+  (global-set-key (kbd "C-c w")         (quote copy-word))
+  (global-set-key [(meta shift up)]  'move-line-up)
+  (global-set-key [(meta shift down)]  'move-line-down)
+
+  ;; Mac style home/end keys
+  (global-set-key (kbd "<home>") 'beginning-of-buffer)
+  (global-set-key (kbd "<end>") 'end-of-buffer)
+  ; https://stackoverflow.com/questions/127591/using-caps-lock-as-esc-in-mac-os-x/40254864
+  (define-key key-translation-map (kbd "<f13>") (kbd "<menu>"))
+  (global-set-key (kbd "<menu>") 'execute-extended-command)
+ )
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -588,13 +648,13 @@ This function is called at the very end of Spacemacs initialization."
  '(line-number-mode nil)
  '(package-selected-packages
    (quote
-    (actionscript-mode flutter dart-server dart-mode confluence xml-rpc ox-jira jira-markup-mode dhall-mode reformatter ox-gfm web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css counsel swiper ivy company-web web-completion-data add-node-modules-path yaml-mode nix-mode git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter dracula-theme diff-hl browse-at-remote yapfify smeargle pytest pyenv-mode py-isort pippel pipenv pyvenv pip-requirements magit-svn magit-popup python live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gitignore helm-git-grep gitignore-templates gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link evil-magit magit transient git-commit with-editor cython-mode company-anaconda blacken anaconda-mode pythonic yasnippet-snippets intero helm-company helm-c-yasnippet fuzzy dante lcr company-statistics company-lsp company-ghci company-ghc company-cabal company auto-yasnippet ac-ispell auto-complete lsp-ui lsp-treemacs lsp-haskell hlint-refactor hindent helm-lsp lsp-mode markdown-mode dash-functional helm-hoogle haskell-snippets yasnippet ghc haskell-mode cmm-mode ws-butler writeroom-mode winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package treemacs-projectile toc-org symon symbol-overlay string-inflection spaceline-all-the-icons restart-emacs request rainbow-delimiters popwin persp-mode pcre2el password-generator paradox overseer org-plus-contrib org-bullets open-junk-file nameless move-text macrostep lorem-ipsum link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flx-ido fill-column-indicator fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu elisp-slime-nav editorconfig dumb-jump dotenv-mode doom-modeline diminish devdocs define-word counsel-projectile column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
+    (ansi package-build shut-up epl git commander f dash s tern nodejs-repl livid-mode skewer-mode js2-refactor multiple-cursors js2-mode js-doc import-js grizzl xterm-color vterm terminal-here shell-pop reveal-in-osx-finder osx-trash osx-dictionary osx-clipboard multi-term launchctl exec-path-from-shell eshell-z eshell-prompt-extras esh-help helm-gtags godoctor go-tag go-rename go-impl go-guru go-gen-test go-fill-struct go-eldoc ggtags flycheck-golangci-lint counsel-gtags company-go go-mode mvn meghanada maven-test-mode lsp-java groovy-mode groovy-imports pcache gradle-mode actionscript-mode flutter dart-server dart-mode confluence xml-rpc ox-jira jira-markup-mode dhall-mode reformatter ox-gfm web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css counsel swiper ivy company-web web-completion-data add-node-modules-path yaml-mode nix-mode git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter dracula-theme diff-hl browse-at-remote yapfify smeargle pytest pyenv-mode py-isort pippel pipenv pyvenv pip-requirements magit-svn magit-popup python live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gitignore helm-git-grep gitignore-templates gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link evil-magit magit transient git-commit with-editor cython-mode company-anaconda blacken anaconda-mode pythonic yasnippet-snippets intero helm-company helm-c-yasnippet fuzzy dante lcr company-statistics company-lsp company-ghci company-ghc company-cabal company auto-yasnippet ac-ispell auto-complete lsp-ui lsp-treemacs lsp-haskell hlint-refactor hindent helm-lsp lsp-mode markdown-mode dash-functional helm-hoogle haskell-snippets yasnippet ghc haskell-mode cmm-mode ws-butler writeroom-mode winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package treemacs-projectile toc-org symon symbol-overlay string-inflection spaceline-all-the-icons restart-emacs request rainbow-delimiters popwin persp-mode pcre2el password-generator paradox overseer org-plus-contrib org-bullets open-junk-file nameless move-text macrostep lorem-ipsum link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flx-ido fill-column-indicator fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu elisp-slime-nav editorconfig dumb-jump dotenv-mode doom-modeline diminish devdocs define-word counsel-projectile column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
  '(tool-bar-mode nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ )
 )
- '(default ((t (:family "MesloLGS NF" :foundry "nil" :slant normal :weight normal :height 210 :width normal)))))
 
