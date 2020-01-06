@@ -52,7 +52,7 @@ This function should only modify configuration layer settings."
              )
      yaml
      helm
-     ;; markdown
+     ; markdown
      confluence
      lsp
      multiple-cursors
@@ -64,6 +64,7 @@ This function should only modify configuration layer settings."
             latex-build-command "LaTeX")
      (shell :variables
              shell-default-height 30
+             shell-default-term-shell "bin/zsh"
              shell-default-position 'bottom)
      ;; spell-checking
      syntax-checking
@@ -76,6 +77,7 @@ This function should only modify configuration layer settings."
            dart-format-on-save t
            dart-backend 'lsp
            dart-server-sdk-path "/usr/local/bin/")
+     eww
      )
 
    ;; List of additional packages that will be installed without being
@@ -230,13 +232,14 @@ It should only modify the values of Spacemacs settings."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press `SPC T n' to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(doom-molokai
+   dotspacemacs-themes '(
+                         doom-city-lights
+                         doom-molokai
                          doom-peacock
                          doom-one
-                         doom-city-lights
                          doom-dracula
                          doom-nord-light
-                         spacemacs-dark)
+                         )
 
    ;; Set the theme for the Spaceline. Supported themes are `spacemacs',
    ;; `all-the-icons', `custom', `doom', `vim-powerline' and `vanilla'. The
