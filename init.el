@@ -620,6 +620,10 @@ before packages are loaded."
 
   (ivy-posframe-mode 1)
 
+  (org-babel-do-load-languages
+      'org-babel-load-languages
+      '((dot . t))) ; this line activates dot
+
   (global-set-key (kbd "C-c s")         (quote thing-copy-string-to-mark))
   (global-set-key (kbd "C-c w")         (quote copy-word))
   (global-set-key [(meta shift up)]  'move-line-up)
