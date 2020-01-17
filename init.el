@@ -96,6 +96,7 @@ This function should only modify configuration layer settings."
                                       org-plus-contrib
                                       lsp-python-ms
                                       ivy-posframe
+                                      centaur-tabs
                                       (lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
    )
 
@@ -521,6 +522,15 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
+  ;https://github.com/ema2159/centaur-tabs
+  (use-package centaur-tabs
+    :demand
+    :config
+    (centaur-tabs-mode t)
+    :bind
+    ("C-<prior>" . centaur-tabs-backward)
+    ("C-<next>" . centaur-tabs-forward))
+  
   (setq lsp-haskell-process-path-hie "hie-wrapper")
   (add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode))
   (require 'lsp-haskell)
@@ -650,6 +660,7 @@ This function is called at the very end of Spacemacs initialization."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(blink-cursor-mode nil)
+ '(column-number-mode t)
  '(global-display-line-numbers-mode t)
  '(haskell-stylish-on-save t)
  '(line-number-mode nil)
@@ -662,6 +673,6 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:family "MesloLGS NF" :foundry "nil" :slant normal :weight normal :height 210 :width normal)))))
 )
 
