@@ -52,8 +52,8 @@ This function should only modify configuration layer settings."
              )
      yaml
      ;helm
-                                        ;markdown
-
+     ;markdown
+     plantuml
      (ivy
       :variables
       ivy-initial-inputs-alist nil)
@@ -549,11 +549,15 @@ before packages are loaded."
                                 (semantic-mode 1)
                                 (setq flycheck-checker 'flake8)))
   (add-hook 'doc-view-mode-hook 'auto-revert-mode)
+  (add-hook 'after-save-hook 'magit-after-save-refresh-status t)
   (setq TeX-engine 'xetex)
   (setq org-directory "/Users/yuanwang/.notable/org-notes")
   (setq org-default-notes-file (concat org-directory "/notes.org"))
   (setq org-agenda-files (quote ("/Users/yuanwang/daily_logs"
                                  "/Users/yuanwang/.notable/org-notes")))
+  (image-type-available-p 'png)
+  (image-type-available-p 'imagemagick)
+  
   (with-eval-after-load 'treemacs
     (add-to-list 'treemacs-pre-file-insert-predicates
                  #'treemacs-is-file-git-ignored?))
