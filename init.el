@@ -51,8 +51,12 @@ This function should only modify configuration layer settings."
              python-pipenv-activate t
              )
      yaml
-     helm
-     ; markdown
+     ;helm
+                                        ;markdown
+
+     (ivy
+      :variables
+      ivy-initial-inputs-alist nil)
      confluence
      lsp
      multiple-cursors
