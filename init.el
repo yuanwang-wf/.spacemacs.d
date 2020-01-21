@@ -33,33 +33,56 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(html
-     yaml
-     shell-scripts
+   '(rust
+     javascript
+     go
+     html
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
      ;; `M-m f e R' (Emacs style) to install them.
      ;; ----------------------------------------------------------------
      auto-completion
-     ;; better-defaults
+     better-defaults
      emacs-lisp
      git
-     ;;python
-     helm
-     ;; markdown
-
+     (python :variables
+             python-backend 'lsp
+             python-lsp-server 'mspyls
+             python-pipenv-activate t
+             )
+     yaml
+     ;helm
+     ;markdown
+     plantuml
+     (ivy
+      :variables
+      ivy-initial-inputs-alist nil)
+     confluence
+     lsp
      multiple-cursors
      (haskell :variables
-              haskell-completion-backend 'dante)
-     org
-     ;; (shell :variables
-     ;;        shell-default-height 30
-     ;;        shell-default-position 'bottom)
+              haskell-completion-backend 'lsp)
+     (org :variables
+          org-enable-github-support t)
+     (latex :variables
+            latex-build-command "LaTeX")
+     (shell :variables
+             shell-default-height 30
+             shell-default-shell 'eshell
+             shell-default-position 'bottom)
      ;; spell-checking
-     ;; syntax-checking
-     treemacs
-     ;; version-control
+     syntax-checking
+     (treemacs
+      :variables treemacs-use-filewatch-mode t
+      :variables treemacs-use-git-mode 'deferred)
+     version-control
+     (java :variables java-backend 'lsp)
+     (dart :variables
+           dart-format-on-save t
+           dart-backend 'lsp
+           dart-server-sdk-path "/usr/local/bin/")
+     eww
      )
 
    ;; List of additional packages that will be installed without being
@@ -70,15 +93,30 @@ This function should only modify configuration layer settings."
    ;; '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
    dotspacemacs-additional-packages '(
-                                      ;;(lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
-                                      (dante :location (recipe :fetcher github :repo "jyp/dante"))
+                                      nix-mode
+                                      doom-themes
+                                      actionscript-mode
+                                      direnv
+                                      dhall-mode
+                                      org-plus-contrib
+                                      lsp-python-ms
+                                      ivy-posframe
+                                      centaur-tabs
+                                      (lsp-haskell :location (recipe :fetcher github :repo "emacs-lsp/lsp-haskell"))
    )
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
 
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '()
+   dotspacemacs-excluded-packages '(
+                                    doom-molokai-theme
+                                    doom-one-theme
+                                    doom-city-lights-theme
+                                    doom-dracula-theme
+                                    doom-nord-light-theme
+                                    doom-peacock-theme
+                                    )
 
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
@@ -200,8 +238,14 @@ It should only modify the values of Spacemacs settings."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press `SPC T n' to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(spacemacs-dark
-                         spacemacs-light)
+   dotspacemacs-themes '(
+                         doom-nord-light
+                         doom-dracula
+                         doom-city-lights
+                         doom-molokai
+                         doom-peacock
+                         doom-one
+                         )
 
    ;; Set the theme for the Spaceline. Supported themes are `spacemacs',
    ;; `all-the-icons', `custom', `doom', `vim-powerline' and `vanilla'. The
@@ -217,8 +261,8 @@ It should only modify the values of Spacemacs settings."
    dotspacemacs-colorize-cursor-according-to-state t
 
    ;; Default font or prioritized list of fonts.
-   dotspacemacs-default-font '("Source Code Pro"
-                               :size 22
+   dotspacemacs-default-font '("MesloLGS NF"
+                               :size 21
                                :weight normal
                                :width normal)
 
@@ -250,7 +294,7 @@ It should only modify the values of Spacemacs settings."
    ;; and TAB or `C-m' and `RET'.
    ;; In the terminal, these pairs are generally indistinguishable, so this only
    ;; works in the GUI. (default nil)
-   dotspacemacs-distinguish-gui-tab nil
+   dotspacemacs-distinguish-gui-tab t
 
    ;; Name of the default layout (default "Default")
    dotspacemacs-default-layout-name "Default"
@@ -370,7 +414,7 @@ It should only modify the values of Spacemacs settings."
    ;;   :size-limit-kb 1000)
    ;; When used in a plist, `visual' takes precedence over `relative'.
    ;; (default nil)
-   dotspacemacs-line-numbers nil
+   dotspacemacs-line-numbers t
 
    ;; Code folding method. Possible values are `evil' and `origami'.
    ;; (default 'evil)
@@ -463,6 +507,11 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
+  (when (version<= "26.0.50" emacs-version )
+    (global-display-line-numbers-mode))
+  (when (string= system-type "darwin")
+    (setq dired-use-ls-dired nil))
+  "(setq mac-option-modifier 'super) ; make opt key do Super"
   )
 
 (defun dotspacemacs/user-load ()
@@ -478,12 +527,138 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
-  ;;(setq lsp-haskell-prcess-path-hie "hie-wrapper")
-  ;;(require 'lsp-haskell)
-  ;;(add-hook 'haskell-mode-hook #'lsp)
-  (add-hook 'dante-mode-hook 'flycheck-mode)
-  (global-company-mode)
-  )
+  ;https://github.com/ema2159/centaur-tabs
+  (use-package centaur-tabs
+    :demand
+    :config
+    (centaur-tabs-mode t)
+    :bind
+    ("C-<prior>" . centaur-tabs-backward)
+    ("C-<next>" . centaur-tabs-forward))
+  
+  (setq lsp-haskell-process-path-hie "hie-wrapper")
+  (add-to-list 'auto-mode-alist '("\\.nix\\'" . nix-mode))
+  (require 'lsp-haskell)
+  (require 'lsp-python-ms)
+  (add-hook 'haskell-mode-hook #'lsp)
+  (add-hook 'dart-mode-hook #'lsp)
+  (custom-set-variables
+   '(haskell-stylish-on-save t))
+  (add-hook 'python-mode #'lsp)
+  
+  (require 'lsp-java)
+  (add-hook 'java-mode-hook #'lsp)
+  (setq lsp-java-import-gradle-enabled t)
+  (add-hook 'python-mode-hook (lambda ()
+                                (flycheck-mode 1)
+                                (semantic-mode 1)
+                                (setq flycheck-checker 'flake8)))
+  (add-hook 'doc-view-mode-hook 'auto-revert-mode)
+  (add-hook 'after-save-hook 'magit-after-save-refresh-status t)
+  (setq TeX-engine 'xetex)
+  (setq org-directory "/Users/yuanwang/.notable/org-notes")
+  (setq org-default-notes-file (concat org-directory "/notes.org"))
+  (setq org-agenda-files (quote ("/Users/yuanwang/daily_logs"
+                                 "/Users/yuanwang/.notable/org-notes")))
+  (image-type-available-p 'png)
+  (image-type-available-p 'imagemagick)
+  
+  (with-eval-after-load 'treemacs
+    (add-to-list 'treemacs-pre-file-insert-predicates
+                 #'treemacs-is-file-git-ignored?))
+
+  (defun get-point (symbol &optional arg)
+    "get the point"x
+    (funcall symbol arg)
+    (point))
+
+  (defun copy-thing (begin-of-thing end-of-thing &optional arg)
+    "Copy thing between beg & end into kill ring."
+    (save-excursion
+      (let ((beg (get-point begin-of-thing 1))
+            (end (get-point end-of-thing arg)))
+        (copy-region-as-kill beg end))))
+
+  (defun paste-to-mark (&optional arg)
+    "Paste things to mark, or to the prompt in shell-mode."
+    (unless (eq arg 1)
+      (if (string= "shell-mode" major-mode)
+          (comint-next-prompt 25535)
+        (goto-char (mark)))
+      (yank)))
+
+  (defun copy-word (&optional arg)
+    "Copy words at point into kill-ring"
+    (interactive "P")
+    (copy-thing 'backward-word 'forward-word arg)
+    ;;(paste-to-mark arg)
+    )
+ 
+  (defun beginning-of-string (&optional arg)
+    (when (re-search-backward "[ \t]" (line-beginning-position) :noerror 1)
+      (forward-char 1)))
+
+  (defun end-of-string (&optional arg)
+    (when (re-search-forward "[ \t]" (line-end-position) :noerror arg)
+      (backward-char 1)))
+
+  (defun thing-copy-string-to-mark(&optional arg)
+    " Try to copy a string and paste it to the mark
+     When used in shell-mode, it will paste string on shell prompt by default "
+    (interactive "P")
+    (copy-thing 'beginning-of-string 'end-of-string arg)
+    ;;(paste-to-mark arg)
+    )
+
+  (autoload 'actionscript-mode "actionscript-mode" "Major mode for actionscript." t)
+  (add-to-list 'auto-mode-alist '("\\.as\\'" . actionscript-mode))
+
+  (defun move-line-up ()
+    "Move up the current line."
+    (interactive)
+    (transpose-lines 1)
+    (forward-line -2)
+    (indent-according-to-mode))
+
+  (defun move-line-down ()
+    "Move down the current line."
+    (interactive)
+    (forward-line 1)
+    (transpose-lines 1)
+    (forward-line -1)
+    (indent-according-to-mode))
+
+  (with-eval-after-load 'ivy-posframe
+    (setq ivy-posframe-display-functions-alist
+          '((swiper          . nil)
+            (complete-symbol . ivy-posframe-display-at-point)
+            (t               . ivy-posframe-display-at-frame-center)))
+
+    ;; TODO: not working
+    ;; (with-eval-after-load 'spacemacs-light
+    ;;   (custom-theme-set-faces
+    ;;    'spacemacs-light
+    ;;    '(ivy-posframe-border ((t (:inherit default))))))
+    )
+
+  (ivy-posframe-mode 1)
+
+  (org-babel-do-load-languages
+      'org-babel-load-languages
+      '((dot . t))) ; this line activates dot
+
+  (global-set-key (kbd "C-c s")         (quote thing-copy-string-to-mark))
+  (global-set-key (kbd "C-c w")         (quote copy-word))
+  (global-set-key [(meta shift up)]  'move-line-up)
+  (global-set-key [(meta shift down)]  'move-line-down)
+
+  ;; Mac style home/end keys
+  (global-set-key (kbd "<home>") 'beginning-of-buffer)
+  (global-set-key (kbd "<end>") 'end-of-buffer)
+  ; https://stackoverflow.com/questions/127591/using-caps-lock-as-esc-in-mac-os-x/40254864
+  (define-key key-translation-map (kbd "<f13>") (kbd "<menu>"))
+  (global-set-key (kbd "<menu>") 'execute-extended-command)
+ )
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -497,9 +672,16 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(blink-cursor-mode nil)
+ '(column-number-mode t)
+ '(global-display-line-numbers-mode t)
+ '(haskell-stylish-on-save t)
+ '(line-number-mode nil)
  '(package-selected-packages
    (quote
-    (web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css company-web web-completion-data add-node-modules-path yaml-mode insert-shebang helm-gtags ggtags flycheck-bashate fish-mode counsel-gtags company-shell yapfify smeargle pytest pyenv-mode py-isort pippel pipenv pyvenv pip-requirements magit-svn magit-popup python live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gitignore helm-git-grep gitignore-templates gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link evil-magit magit transient git-commit with-editor cython-mode company-anaconda blacken anaconda-mode pythonic yasnippet-snippets intero helm-company helm-c-yasnippet fuzzy dante lcr company-statistics company-lsp company-ghci company-ghc company-cabal company auto-yasnippet ac-ispell auto-complete lsp-ui lsp-treemacs lsp-haskell hlint-refactor hindent helm-lsp lsp-mode markdown-mode dash-functional helm-hoogle haskell-snippets yasnippet ghc haskell-mode cmm-mode ws-butler writeroom-mode winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package treemacs-projectile toc-org symon symbol-overlay string-inflection spaceline-all-the-icons restart-emacs request rainbow-delimiters popwin persp-mode pcre2el password-generator paradox overseer org-plus-contrib org-bullets open-junk-file nameless move-text macrostep lorem-ipsum link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flx-ido fill-column-indicator fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu elisp-slime-nav editorconfig dumb-jump dotenv-mode doom-modeline diminish devdocs define-word counsel-projectile column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line))))
+    (toml-mode racer helm helm-core flycheck-rust cargo rust-mode ansi package-build shut-up epl git commander f dash s tern nodejs-repl livid-mode skewer-mode js2-refactor multiple-cursors js2-mode js-doc import-js grizzl xterm-color vterm terminal-here shell-pop reveal-in-osx-finder osx-trash osx-dictionary osx-clipboard multi-term launchctl exec-path-from-shell eshell-z eshell-prompt-extras esh-help helm-gtags godoctor go-tag go-rename go-impl go-guru go-gen-test go-fill-struct go-eldoc ggtags flycheck-golangci-lint counsel-gtags company-go go-mode mvn meghanada maven-test-mode lsp-java groovy-mode groovy-imports pcache gradle-mode actionscript-mode flutter dart-server dart-mode confluence xml-rpc ox-jira jira-markup-mode dhall-mode reformatter ox-gfm web-mode web-beautify tagedit slim-mode scss-mode sass-mode pug-mode prettier-js impatient-mode simple-httpd helm-css-scss haml-mode emmet-mode counsel-css counsel swiper ivy company-web web-completion-data add-node-modules-path yaml-mode nix-mode git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter dracula-theme diff-hl browse-at-remote yapfify smeargle pytest pyenv-mode py-isort pippel pipenv pyvenv pip-requirements magit-svn magit-popup python live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-gitignore helm-git-grep gitignore-templates gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link evil-magit magit transient git-commit with-editor cython-mode company-anaconda blacken anaconda-mode pythonic yasnippet-snippets intero helm-company helm-c-yasnippet fuzzy dante lcr company-statistics company-lsp company-ghci company-ghc company-cabal company auto-yasnippet ac-ispell auto-complete lsp-ui lsp-treemacs lsp-haskell hlint-refactor hindent helm-lsp lsp-mode markdown-mode dash-functional helm-hoogle haskell-snippets yasnippet ghc haskell-mode cmm-mode ws-butler writeroom-mode winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package treemacs-projectile toc-org symon symbol-overlay string-inflection spaceline-all-the-icons restart-emacs request rainbow-delimiters popwin persp-mode pcre2el password-generator paradox overseer org-plus-contrib org-bullets open-junk-file nameless move-text macrostep lorem-ipsum link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flx-ido fill-column-indicator fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu elisp-slime-nav editorconfig dumb-jump dotenv-mode doom-modeline diminish devdocs define-word counsel-projectile column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
+ '(tool-bar-mode nil))
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
